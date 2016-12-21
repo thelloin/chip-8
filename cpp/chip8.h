@@ -7,7 +7,7 @@ class Chip8
 {
 public:
     void initialize();
-    void loadGame(std::string name) {}
+    void loadGame(std::string name);
 
     void emulateCycle();
     void setKeys() {}
@@ -25,6 +25,7 @@ private:
     unsigned char sound_timer;
     unsigned short stack[16];
     unsigned short sp;             // stack pointer
+    unsigned char key[16];
 };
 
 #endif
