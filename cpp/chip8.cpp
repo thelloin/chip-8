@@ -3,6 +3,53 @@
 #include <iostream>
 #include <stdlib.h>
 
+/*
+ * Opcodes to implement:
+ * 0x0NNN
+ * 0x00E0
+ * 0x00EE
+ * 0x1NNN
+ * 0x2NNN *
+ * 0x3XNN
+ * 0x4XNN
+ * 0x5XY0
+ * 0x6XNN
+ * 0x7XNN
+ * 0x8XY0
+ * 0x8XY1
+ * 0x8XY2
+ * 0x8XY3
+ * 0x8XY4 *
+ * 0x8XY5
+ * 0x8XY6
+ * 0x8XY7
+ * 0x8XYE
+ * 0x9XY0
+ * 0xANNN *
+ * 0xBNNN
+ * 0xCXNN
+ * 0xDXYN *
+ * 0xEX9E *
+ * 0xEXA1
+ * 0xFX07
+ * 0xFX0A
+ * 0xFX15
+ * 0xFX18
+ * 0xFX1E
+ * 0xFX29
+ * 0xFX33 *
+ * 0xFX55
+ * 0xFX65
+ */
+
+#define DEBUG
+
+#ifdef DEBUG
+# define DEBUG_PRINT(x) printf x
+#else
+# define DEBUG_PRINT(x) do {} while (0)
+#endif
+
 // The chip-8 font set
 unsigned char chip8_fontset[80] =
 { 
@@ -43,13 +90,58 @@ void Chip8::initialize()
     // Reset timers
 }
 
-void Chip8::loadGame(std::string name)
+bool Chip8::loadGame(std::string name)
 {
-    // Load the program into memory (use fopen in binary mode) and start
-    // filling the memory at location 0x200 = 512
+    // Load the program into memory starting at location 0x200 = 512
+    printf("Loading game : %s\n", name.c_str());
 
-    //for (int i = 0; i < bufferSize; ++i)
-    //memory[i + 512] = buffer[i];
+    // Open file
+    FILE * pFile = fopen(name.c_str(), "rb");
+    if (pFile == NULL)
+    {
+	fputs("File error", stderr);
+	return false;
+    }
+
+    // Check file size
+    fseek(pFile, 0, SEEK_END);
+    long lSize = ftell(pFile);
+    rewind(pFile);
+    printf("Filesize: %d\n", (int)lSize);
+
+    // Allocate memory to contain the whole file
+    char * buffer = (char*)malloc(sizeof(char) * lSize);
+    if (buffer == NULL)
+    {
+	fputs("Memory error", stderr);
+	return false;
+    }
+
+    // Copy the file into the buffer
+    size_t result = fread(buffer, 1, lSize, pFile);
+    if ((int)result != lSize)
+    {
+	fputs("Reading error", stderr);
+	return false;
+    }
+
+    // Copy buffer to chip-8 memory
+    if ((4096 - 512) > lSize)
+    {
+	for (int i = 0; i < lSize; ++i)
+	    memory[i + 512] = buffer[i];
+    }
+    else
+    {
+	printf("Error: ROM to big for memory");
+	return false;
+    }
+
+    // Close file, free buffer
+    fclose(pFile);
+    free(buffer);
+
+    return true;
 }
 
 void Chip8::emulateCycle()
@@ -65,13 +157,29 @@ void Chip8::emulateCycle()
 	{
 	case 0x0000: // 0x00E0: Clears the screen
 	    // Execute opcode
+	    printf("in clear screen\n");
+	    pc += 2;
 	    break;
 	case 0x000E: // 0x00EE: Returns from subroutine
 	    // Execute opcode
+	    printf("in return from subroutine\n");
+	    pc += 2;
 	    break;
 	default:
 	    printf("Unknown opcode [0x0000]: 0x%X\n", opcode);
 	}
+	break;
+
+    case 0x2000: // 2NNN: Calls subroutine at NNN
+	stack[sp] = pc;
+	++sp;
+	pc = opcode & 0x0FFF;
+	break;
+
+    case 0x6000: // 6XNN: Sets VX to NN
+	DEBUG_PRINT(("Set V[%X] to %X\n", (opcode & 0x0F00) >> 8, opcode & 0x00FF));
+	V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+	pc += 2;
 	break;
 
     case 0x8000:
@@ -90,19 +198,13 @@ void Chip8::emulateCycle()
 	}
 	break;
 
-    case 0x2000: // 2NNN: Calls subroutine at NNN
-	stack[sp] = pc;
-	++sp;
-	pc = opcode & 0x0FFF;
-	break;
-
     case 0xA000: // ANNN: Sets I to the adress NNN
 	// Execute Opcode
 	I = opcode & 0x0FFF;
 	pc += 2;
 	break;
 
-    case 0xD000:
+    case 0xD000: // DXYN: Draws a sprite at coordinate (VX, VY), height N
     {
 	unsigned short x = V[(opcode & 0x0F00) >> 8];
 	unsigned short y = V[(opcode & 0x00F0) >> 4];

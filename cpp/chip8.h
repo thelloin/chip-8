@@ -7,7 +7,7 @@ class Chip8
 {
 public:
     void initialize();
-    void loadGame(std::string name);
+    bool loadGame(std::string name);
 
     void emulateCycle();
     void setKeys() {}
