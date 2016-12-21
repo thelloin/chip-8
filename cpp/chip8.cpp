@@ -7,14 +7,14 @@
  * Opcodes to implement:
  * 0x0NNN
  * 0x00E0
- * 0x00EE
+ * 0x00EE *
  * 0x1NNN
  * 0x2NNN *
  * 0x3XNN
  * 0x4XNN
  * 0x5XY0
- * 0x6XNN
- * 0x7XNN
+ * 0x6XNN *
+ * 0x7XNN *
  * 0x8XY0
  * 0x8XY1
  * 0x8XY2
@@ -36,10 +36,10 @@
  * 0xFX15
  * 0xFX18
  * 0xFX1E
- * 0xFX29
+ * 0xFX29 *
  * 0xFX33 *
  * 0xFX55
- * 0xFX65
+ * 0xFX65 *
  */
 
 #define DEBUG
@@ -148,7 +148,7 @@ void Chip8::emulateCycle()
 {
     // Fetch Opcode
     opcode = memory[pc] << 8 | memory[pc + 1];
-
+    DEBUG_PRINT(("opcode: 0x%X\n", opcode));
     // Decode Opcode
     switch (opcode & 0xF000)
     {
@@ -157,14 +157,14 @@ void Chip8::emulateCycle()
 	{
 	case 0x0000: // 0x00E0: Clears the screen
 	    // Execute opcode
-	    printf("in clear screen\n");
+	    printf("NOT DONE\n");
 	    pc += 2;
 	    break;
 	case 0x000E: // 0x00EE: Returns from subroutine
-	    // Execute opcode
-	    printf("in return from subroutine\n");
-	    pc += 2;
+	    pc = stack[--sp];
+	    pc += 2;   
 	    break;
+
 	default:
 	    printf("Unknown opcode [0x0000]: 0x%X\n", opcode);
 	}
@@ -179,6 +179,11 @@ void Chip8::emulateCycle()
     case 0x6000: // 6XNN: Sets VX to NN
 	DEBUG_PRINT(("Set V[%X] to %X\n", (opcode & 0x0F00) >> 8, opcode & 0x00FF));
 	V[(opcode & 0x0F00) >> 8] = opcode & 0x00FF;
+	pc += 2;
+	break;
+
+    case 0x7000: // 7XNN: Adds NN to VX
+	V[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
 	pc += 2;
 	break;
 
@@ -239,18 +244,47 @@ void Chip8::emulateCycle()
 	    else
 		pc += 2;
 	    break;
+	    
+	default:
+	    printf("Unknown opcode: 0x%X\n", opcode);
 	}
 	break;
 
     case 0xF000:
-	switch (opcode % 0x00FF)
+	switch (opcode & 0x00FF)
 	{
+	case 0x0015: // 0xFX15: 
+	    
+	    break;
+
+	case 0x0029: // 0xFX29: Sets I to the location of the sprite for the char in VX
+	    I = V[(opcode & 0x0F00) >> 8] * 0x5;
+	    pc += 2;
+	    break;
+
 	case 0x0033: // 0xFX33: Store the binary-coded decimal representation of VX
+	    DEBUG_PRINT(("DONE\n"));
 	    memory[I]     = V[(opcode & 0x0F00) >> 8] / 100;
 	    memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 100) % 10;
 	    memory[I + 2] = (V[(opcode & 0x0F00) >> 8] % 100) % 10;
 	    pc += 2;
 	    break;
+	    
+	case 0x0065: // 0xFX65: Fills V0 to VX with values from memory starting at addr I
+	{
+	    DEBUG_PRINT(("Done\n"));
+	    unsigned short x = (opcode & 0x0F00) >> 8;
+	    for (unsigned short i = 0; i <= x; ++i)
+		V[i] = memory[I + i];
+
+	    // On the original interpreter, when the operation is done, I = I + X + 1
+	    I += ((opcode & 0x0F00) >> 8) + 1;
+	    pc += 2;
+	}   
+	break;
+
+	default:
+	    printf("Unknown opcode: 0x%X\n", opcode);
 	}
 	break;
 
@@ -270,5 +304,4 @@ void Chip8::emulateCycle()
 	--sound_timer;
     }
 
-    std::cout << "In emulate cycle" << std::endl;
 }
