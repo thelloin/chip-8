@@ -8,19 +8,19 @@
  * 0x0NNN
  * 0x00E0
  * 0x00EE *
- * 0x1NNN
+ * 0x1NNN *
  * 0x2NNN *
- * 0x3XNN
+ * 0x3XNN *
  * 0x4XNN
  * 0x5XY0
  * 0x6XNN *
  * 0x7XNN *
- * 0x8XY0
+ * 0x8XY0 *
  * 0x8XY1
- * 0x8XY2
+ * 0x8XY2 *
  * 0x8XY3
  * 0x8XY4 *
- * 0x8XY5
+ * 0x8XY5 *
  * 0x8XY6
  * 0x8XY7
  * 0x8XYE
@@ -30,10 +30,10 @@
  * 0xCXNN
  * 0xDXYN *
  * 0xEX9E *
- * 0xEXA1
- * 0xFX07
+ * 0xEXA1 *
+ * 0xFX07 *
  * 0xFX0A
- * 0xFX15
+ * 0xFX15 *
  * 0xFX18
  * 0xFX1E
  * 0xFX29 *
@@ -81,6 +81,8 @@ void Chip8::initialize()
     // Clear display
     // Clear stack
     // Clear registers V0-VF
+    for (int i = 0; i < 0xF; ++i)
+	V[i] = 0;
     // Clear memory
 
     // Load fontset
@@ -88,6 +90,8 @@ void Chip8::initialize()
 	memory[i] = chip8_fontset[i];
 
     // Reset timers
+    delay_timer = 0;
+    sound_timer = 0;
 }
 
 bool Chip8::loadGame(std::string name)
@@ -170,10 +174,29 @@ void Chip8::emulateCycle()
 	}
 	break;
 
+    case 0x1000: // 1NNN: Jumps to address NNN
+	pc = opcode & 0x0FFF;
+	break;
+
     case 0x2000: // 2NNN: Calls subroutine at NNN
 	stack[sp] = pc;
 	++sp;
 	pc = opcode & 0x0FFF;
+	break;
+
+    case 0x3000: // 0x3XNN: Skips the next instruction if VX equals NN
+	DEBUG_PRINT(("VX : %X\n", V[(opcode & 0x0F00) >> 8]));
+	if (V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
+	    pc += 4;
+	else
+	    pc += 2;
+	break;
+
+    case 0x4000: // 0x4XNN: Skips the next instruction if VX doesn't equal NN
+	if (V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
+	    pc += 4;
+	else
+	    pc += 2;
 	break;
 
     case 0x6000: // 6XNN: Sets VX to NN
@@ -190,6 +213,16 @@ void Chip8::emulateCycle()
     case 0x8000:
 	switch (opcode & 0x000F)
 	{
+	case 0x0000: // 0x8XY0: Sets VX to the value of VY
+	    V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4];
+	    pc += 2;
+	    break;
+
+	case 0x0002: // 0x8XY2: Sets VX to VX and(bitOp) VY
+	    V[(opcode & 0x0F00) >> 8] &= V[(opcode & 0x00F0) >> 4];
+	    pc += 2;
+	    break;
+
 	case 0x0004: // 0x8XY4: Add VY to VX. Set VF to 1 if carry
 	    if (V[(opcode & 0x00F0) >> 4] > (0xFF - V[(opcode & 0x0F00) >> 8]))
 		V[0xF] = 1; // Set carry
@@ -198,6 +231,16 @@ void Chip8::emulateCycle()
 	    V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
 	    pc += 2;
 	    break;
+
+	case 0x0005: // 0x8XY5: VY is subtracted from VX. VF is set to 0 when there is a borrow and 1 when there isn't
+	    if (V[(opcode & 0x00F0) >> 4] > V[(opcode & 0x0F00) >> 8])
+		V[0xF] = 0;
+	    else
+		V[0xF] = 1;
+	    V[(opcode & 0x0F00) >> 8] -= V[(opcode & 0x00F0) >> 4];
+	    pc += 2;
+	    break;
+
 	default:
 	    printf("Unknown opcode [0x8000]: 0x%X\n", opcode);
 	}
@@ -206,6 +249,12 @@ void Chip8::emulateCycle()
     case 0xA000: // ANNN: Sets I to the adress NNN
 	// Execute Opcode
 	I = opcode & 0x0FFF;
+	pc += 2;
+	break;
+
+    case 0xC000: // CXNN: Sets VX to the result of a bitwise and on a rand(0-255) and NN
+	// TODO: Make sure this works as expected
+	V[(opcode & 0x0F00) >> 8] = dist(eng) & (opcode & 0x0FF);
 	pc += 2;
 	break;
 
@@ -244,6 +293,13 @@ void Chip8::emulateCycle()
 	    else
 		pc += 2;
 	    break;
+
+	case 0x00A1: // 0xEXA1: Skips the next instruction if the key in VX isn't pressed
+	    if (key[V[(opcode & 0x0F00) >> 8]] == 0)
+		pc += 4;
+	    else
+		pc += 2;
+	    break;
 	    
 	default:
 	    printf("Unknown opcode: 0x%X\n", opcode);
@@ -253,8 +309,20 @@ void Chip8::emulateCycle()
     case 0xF000:
 	switch (opcode & 0x00FF)
 	{
-	case 0x0015: // 0xFX15: 
-	    
+	case 0x0007: // 0xFX07: Sets VX to the value of delay timer
+	    V[(opcode & 0x0F00) >> 8] = delay_timer;
+	    pc += 2;
+	    break;
+
+	case 0x0015: // 0xFX15: Set the delay timer to VX
+	    DEBUG_PRINT(("Sets the delay timer to : %X\n", V[(opcode & 0x0F00) >> 8]));
+	    delay_timer = V[(opcode & 0x0F00) >> 8];
+	    pc += 2;
+	    break;
+
+	case 0x0018: // 0xFX18: Sets the sound timer to VX
+	    sound_timer = V[(opcode & 0x0F00) >> 8];
+	    pc += 2;
 	    break;
 
 	case 0x0029: // 0xFX29: Sets I to the location of the sprite for the char in VX
@@ -292,9 +360,9 @@ void Chip8::emulateCycle()
 	printf("Unknown opcode: 0x%X\n", opcode);
     }
 
-
+    //DEBUG_PRINT(("Delay timer is : %d\n", delay_timer));
     // Update Timers
-    if (delay_timer > 0)
+    if (delay_timer > 0)	
 	--delay_timer;
 
     if (sound_timer > 0)

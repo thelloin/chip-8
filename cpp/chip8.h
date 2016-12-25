@@ -2,10 +2,15 @@
 #define CHIP8_H
 
 #include <string>
+#include <random>
 
 class Chip8
 {
 public:
+    Chip8() : eng(), dist(0, 255) {
+	
+    }
+
     void initialize();
     bool loadGame(std::string name);
 
@@ -26,6 +31,9 @@ private:
     unsigned short stack[16];
     unsigned short sp;             // stack pointer
     unsigned char key[16];
+
+    std::mt19937 eng;
+    std::uniform_int_distribution<> dist;
 };
 
 #endif

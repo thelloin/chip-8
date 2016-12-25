@@ -17,7 +17,7 @@ int main()
     chip8.loadGame("ROMS/PONG");
 
     // Emulation loop
-    for (int i = 0; i < 30; ++i)
+    for (int i = 0; i < 8000; ++i)
     {
 	// Emulate one cycle
 	chip8.emulateCycle();
