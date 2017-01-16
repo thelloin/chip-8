@@ -79,16 +79,16 @@ void Chip8::initialize()
     sp      = 0;       // Reset stack pointer
 
     // Clear display
-    for(int i = 0; i < 64*32; ++i)
+    for(unsigned int i = 0; i < VIDEO_WIDTH * VIDEO_HEIGHT; ++i)
 	gfx[i] = 0;
     // Clear stack
-    for(int i = 0; i < 16; ++i)
+    for(unsigned int i = 0; i < STACK_SIZE; ++i)
 	stack[i] = 0;
     // Clear registers V0-VF
-    for (int i = 0; i < 0xF; ++i)
+    for (unsigned int i = 0; i < VREG_SIZE; ++i)
 	V[i] = 0;
     // Clear memory
-    for (int i = 0; i < 4096; ++i)
+    for (unsigned int i = 0; i < MEMORY_SIZE; ++i)
 	memory[i] = 0;
 
     // Load fontset
@@ -138,10 +138,10 @@ bool Chip8::loadGame(std::string name)
     }
 
     // Copy buffer to chip-8 memory
-    if ((4096 - 512) > lSize)
+    if ((MEMORY_SIZE - PROGRAM_START) > lSize)
     {
 	for (int i = 0; i < lSize; ++i)
-	    memory[i + 512] = buffer[i];
+	    memory[i + PROGRAM_START] = buffer[i];
     }
     else
     {
@@ -281,9 +281,9 @@ void Chip8::emulateCycle()
 	    {
 		if ((pixel & (0x80 >> xline)) != 0)
 		{
-		    if (gfx[(x + xline + ((y + yline) * 64))] == 1)
+		    if (gfx[(x + xline + ((y + yline) * VIDEO_WIDTH))] == 1)
 			V[0xF] = 1;
-		    gfx[x + xline + ((y + yline) * 64)] ^= 1;
+		    gfx[x + xline + ((y + yline) * VIDEO_WIDTH)] ^= 1;
 		}
 	    }
 	}

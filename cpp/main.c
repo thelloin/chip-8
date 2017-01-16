@@ -5,6 +5,8 @@
 
 using namespace std;
 
+const int SCALE = 10;
+
 static int keymap[0x10] = {
     SDLK_0,
     SDLK_1,
@@ -55,7 +57,6 @@ int main()
     bool quit = false;
 
     // Emulation loop
-    //for (int i = 0; i < 8000; ++i)
     while (!quit)
     {
 	// Emulate one cycle
@@ -73,6 +74,9 @@ int main()
 
 	// Store key press state (Press and Release)
 	chip8.setKeys();
+
+	// Put a simple delay. TODO: Better implementation
+	SDL_Delay(3);
     }
 
     stopGraphics();
@@ -110,15 +114,15 @@ bool setupGraphics()
 
 void drawGraphics()
 {
-    SDL_Rect pixel = {0, 0, 10, 10};
+    SDL_Rect pixel = {0, 0, SCALE, SCALE};
 
-    for (int x = 0; x < 64; ++x)
+    for (unsigned int x = 0; x < VIDEO_WIDTH; ++x)
     {
-	pixel.x = x * 10;
-	for (int y = 0; y < 32; ++y)
+	pixel.x = x * SCALE;
+	for (unsigned int y = 0; y < VIDEO_HEIGHT; ++y)
 	{
-	    pixel.y = y * 10;
-	    SDL_FillRect(screen, &pixel, palette[chip8.gfx[x + y*64]]);
+	    pixel.y = y * SCALE;
+	    SDL_FillRect(screen, &pixel, palette[chip8.gfx[x + y*VIDEO_WIDTH]]);
 	}
     }
     SDL_UpdateWindowSurface(window);
