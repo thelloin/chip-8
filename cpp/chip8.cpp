@@ -42,7 +42,7 @@
  * 0xFX65 *
  */
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 # define DEBUG_PRINT(x) printf x
@@ -79,11 +79,17 @@ void Chip8::initialize()
     sp      = 0;       // Reset stack pointer
 
     // Clear display
+    for(int i = 0; i < 64*32; ++i)
+	gfx[i] = 0;
     // Clear stack
+    for(int i = 0; i < 16; ++i)
+	stack[i] = 0;
     // Clear registers V0-VF
     for (int i = 0; i < 0xF; ++i)
 	V[i] = 0;
     // Clear memory
+    for (int i = 0; i < 4096; ++i)
+	memory[i] = 0;
 
     // Load fontset
     for (int i = 0; i < 80; ++i)
@@ -92,6 +98,8 @@ void Chip8::initialize()
     // Reset timers
     delay_timer = 0;
     sound_timer = 0;
+
+    drawFlag = true;
 }
 
 bool Chip8::loadGame(std::string name)
@@ -368,7 +376,7 @@ void Chip8::emulateCycle()
     if (sound_timer > 0)
     {
 	if (sound_timer == 1)
-	    printf("BEEP!\n");
+	    DEBUG_PRINT(("BEEP!\n"));
 	--sound_timer;
     }
 
