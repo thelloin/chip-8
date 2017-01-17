@@ -29,6 +29,7 @@ public:
     bool drawFlag;
 
     unsigned char gfx[VIDEO_WIDTH * VIDEO_HEIGHT];    // The pixels
+    unsigned char key[KEY_SIZE];
     
 private:
     unsigned short opcode;
@@ -40,7 +41,7 @@ private:
     unsigned char sound_timer;
     unsigned short stack[STACK_SIZE];
     unsigned short sp;             // stack pointer
-    unsigned char key[KEY_SIZE];
+    
 
     std::mt19937 eng;
     std::uniform_int_distribution<> dist;
