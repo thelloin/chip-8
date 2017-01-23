@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SDL2/SDL.h>
+#include <map>
 
 #include "chip8.h"
 
@@ -7,6 +8,7 @@ using namespace std;
 
 const int SCALE = 10;
 
+/*
 // Chip8 Keypad
 const Uint32 KEY_0 = SDL_SCANCODE_KP_0;
 const Uint32 KEY_1 = SDL_SCANCODE_KP_1;
@@ -24,6 +26,7 @@ const Uint32 KEY_C = SDL_SCANCODE_Z;
 const Uint32 KEY_D = SDL_SCANCODE_W;
 const Uint32 KEY_E = SDL_SCANCODE_S;
 const Uint32 KEY_F = SDL_SCANCODE_X;
+*/
 
 SDL_Window * window = nullptr;
 SDL_Surface * screen = nullptr;
@@ -53,6 +56,24 @@ int main()
     chip8.initialize();
     chip8.loadGame("ROMS/TICTAC");
 
+    map<SDL_Keycode, uint8_t> keymap;
+    keymap.insert({SDLK_1, 0x1});
+    keymap.insert({SDLK_2, 0x2});
+    keymap.insert({SDLK_3, 0x3});
+    keymap.insert({SDLK_4, 0xc});
+    keymap.insert({SDLK_q, 0x4});
+    keymap.insert({SDLK_w, 0x5});
+    keymap.insert({SDLK_e, 0x6});
+    keymap.insert({SDLK_r, 0xd});
+    keymap.insert({SDLK_a, 0x7});
+    keymap.insert({SDLK_s, 0x8});
+    keymap.insert({SDLK_d, 0x9});
+    keymap.insert({SDLK_f, 0xe});
+    keymap.insert({SDLK_z, 0xa});
+    keymap.insert({SDLK_x, 0x0});
+    keymap.insert({SDLK_c, 0xb});
+    keymap.insert({SDLK_v, 0xf});
+
     SDL_Event e;
     bool quit = false;
 
@@ -68,15 +89,35 @@ int main()
 
 	while (SDL_PollEvent(&e))
 	{
-	    if (handleEvents(&e))
+	    switch(e.type) {
+	    case SDL_QUIT:
+		quit = true;
+		break;
+	    case SDL_KEYDOWN:
+	    {
+		const auto key = e.key.keysym.sym;
+		if (key == SDLK_ESCAPE) quit = true;
+		if(keymap.find(key) != keymap.end()) chip8.pressKey(keymap[key]);
+	    }
+	    break;
+	    case SDL_KEYUP:
+	    {
+		const auto key = e.key.keysym.sym;
+		if (keymap.find(key) != keymap.end()) chip8.releaseKey(keymap[key]);
+	    }
+	    break;
+
+	    }
+	    /*if (handleEvents(&e))
 		quit = true;
 
 	    if (e.type == SDL_QUIT)
 		quit = true;
+	    */
 	}
 
 	// Store key press state (Press and Release)
-	chip8.setKeys();
+	//chip8.setKeys();
 
 	// Put a simple delay. TODO: Better implementation
 	SDL_Delay(3);
@@ -132,6 +173,7 @@ void drawGraphics()
     chip8.drawFlag = false;
 }
 
+/*
 bool handleEvents(SDL_Event* e)
 {
     if (e->type == SDL_KEYUP)
@@ -143,6 +185,9 @@ bool handleEvents(SDL_Event* e)
 
     }
     const Uint8 *keystates = SDL_GetKeyboardState( NULL );
+    Uint * keys;
+    keys = SDL_GetKeyState(NULL);
+    //if(keys[SDLK_0]
     chip8.key[0x0] = keystates[KEY_0];
     chip8.key[0x1] = keystates[KEY_1];
     chip8.key[0x2] = keystates[KEY_2];
@@ -161,6 +206,7 @@ bool handleEvents(SDL_Event* e)
     chip8.key[0xF] = keystates[KEY_F];
     return false;
 }
+*/
 
 void stopGraphics()
 {

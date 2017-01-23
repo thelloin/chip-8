@@ -24,7 +24,9 @@ public:
     bool loadGame(std::string name);
 
     void emulateCycle();
-    void setKeys() {}
+    void pressKey(const uint8_t);
+    void releaseKey(const uint8_t);
+    void setKeys() {} // Can probably delete this eventually
 
     bool drawFlag;
 

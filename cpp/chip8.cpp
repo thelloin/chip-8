@@ -156,6 +156,16 @@ bool Chip8::loadGame(std::string name)
     return true;
 }
 
+void Chip8::pressKey(const uint8_t k)
+{
+    key[k] = 1;
+}
+
+void Chip8::releaseKey(const uint8_t k)
+{
+    key[k] = 0;
+}
+
 void Chip8::emulateCycle()
 {
     // Fetch Opcode
