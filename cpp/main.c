@@ -7,21 +7,21 @@
 
 using namespace std;
 
-//const int SCALE = 10;
 
 
-Chip8 chip8;
 
 
-//bool setupGraphics();
-//void setupInput();   // TODO
-//bool handleEvents(SDL_Event*);
-//void drawGraphics();
-//void stopGraphics();
 
-int main()
+int main(int argc, char* argv[])
 {
+    // Checking arguments
+    if (argc != 2)
+    {
+	cerr << "Run as \"" << argv[0] << "\" <file path>\n";
+	return 1;
+    }
 
+    Chip8 chip8;
     IOHandler iohandler{&chip8};
     
     cout << "Initializing SDL..." << endl;
@@ -31,12 +31,11 @@ int main()
 	cout << "Error setting up SDL\n" << endl;
 	return 1;
     }
-    // setupInput();
 
     cout << "Initializing chip-8" << endl;
     // Initialize the Chip8 system and load the game into memory
     chip8.initialize();
-    chip8.loadGame("ROMS/PONG2");
+    chip8.loadGame(argv[1]);
 
     map<SDL_Keycode, uint8_t> keymap;
     keymap.insert({SDLK_1, 0x1});
@@ -92,7 +91,7 @@ int main()
 	    }
 	}
 
-	// Put a simple delay. TODO: Better implementation
+	// Put a simple delay.
 	SDL_Delay(2);
     }
 
@@ -100,56 +99,3 @@ int main()
 
     return 0;
 }
-
-/*bool setupGraphics()
-{
-    if (SDL_Init(SDL_INIT_VIDEO) == -1)
-    {
-	cout << SDL_GetError() << endl;
-	return false;
-    }
-
-    window = SDL_CreateWindow("Chip-8 Interpreter",
-			      SDL_WINDOWPOS_CENTERED,
-			      SDL_WINDOWPOS_CENTERED,
-			      640,
-			      320,
-			      SDL_WINDOW_SHOWN);
-    if (window == nullptr)
-    {
-	cout << SDL_GetError() << endl;
-	return false;
-    }
-
-    screen = SDL_GetWindowSurface(window);
-
-    palette[0] = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
-    palette[1] = SDL_MapRGB(screen->format, 0xFF, 0xFF, 0xFF);
-
-    return true;
-    }
-
-void drawGraphics()
-{
-    SDL_Rect pixel = {0, 0, SCALE, SCALE};
-
-    for (unsigned int x = 0; x < VIDEO_WIDTH; ++x)
-    {
-	pixel.x = x * SCALE;
-	for (unsigned int y = 0; y < VIDEO_HEIGHT; ++y)
-	{
-	    pixel.y = y * SCALE;
-	    SDL_FillRect(screen, &pixel, palette[chip8.gfx[x + y*VIDEO_WIDTH]]);
-	}
-    }
-    SDL_UpdateWindowSurface(window);
-    chip8.drawFlag = false;
-}
-
-void stopGraphics()
-{
-    cout << "Stopping SDL..." << endl;
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-}
-*/

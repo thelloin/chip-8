@@ -1,7 +1,7 @@
 # chip-8
 
-This is an attempt to write an emulator for the chip-8 virtual machine.
-The goal is to write two versions: one in c and one in c++.
+An emulator for the chip-8 virtual machine written in c++.
+
 
 ### References
 Resources used

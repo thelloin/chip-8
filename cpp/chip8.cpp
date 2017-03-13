@@ -102,13 +102,13 @@ void Chip8::initialize()
     drawFlag = true;
 }
 
-bool Chip8::loadGame(std::string name)
+bool Chip8::loadGame(char* name)
 {
     // Load the program into memory starting at location 0x200 = 512
-    printf("Loading game : %s\n", name.c_str());
+    printf("Loading game : %s\n", name);
 
     // Open file
-    FILE * pFile = fopen(name.c_str(), "rb");
+    FILE * pFile = fopen(name, "rb");
     if (pFile == NULL)
     {
 	fputs("File error", stderr);

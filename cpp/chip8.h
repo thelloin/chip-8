@@ -21,7 +21,7 @@ public:
     }
 
     void initialize();
-    bool loadGame(std::string name);
+    bool loadGame(char* name);
 
     void emulateCycle();
     void pressKey(const uint8_t);
